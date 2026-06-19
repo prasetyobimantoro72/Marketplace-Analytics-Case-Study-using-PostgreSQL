@@ -10,11 +10,11 @@ The analysis focuses on foundational marketplace metrics such as data scale, ord
 
 The dataset contains transaction, catalog, seller, customer, campaign, logistics, review, refund, and event data. The image below summarizes what is included in each table.
 
-![Marketplace table overview](marketplace_table_content.png)
+![Marketplace table overview](assets/marketplace_table_content.png)
 
 The simplified relationship map below shows the main analytical joins used in this project.
 
-![Marketplace table relationship map](marketplace_table_relationship_diagram.png)
+![Marketplace table relationship map](assets/marketplace_table_relationship_diagram.png)
 
 ## Key Metric Definitions
 
@@ -38,14 +38,14 @@ Revenue and sales analysis mainly uses completed orders because cancelled, pendi
 
 ## Analysis Questions, SQL Queries, Results, and Insights
 
-Result tables below are shown as concise previews to keep the README readable. The full query can be run directly in PostgreSQL using the SQL files in this repository.
+The result tables below are concise previews generated from the same fictional marketplace dataset. The column names in each result preview match the SQL aliases shown in the query.
 
 ### 1. Count Rows in Every Table
 
-This analysis profiles the scale of the marketplace dataset across each core entity, including transactions, customers, sellers, catalog, payments, logistics, reviews, refunds, campaigns, and behavior events. It matters because a strong analyst should first understand dataset coverage before interpreting performance metrics.
+This query profiles the number of rows in every major marketplace table. It is important because the first analytical step is understanding which tables are transaction-heavy and which tables are smaller dimensions.
 
 ```sql
-SELECT 'campaigns' AS table_name, COUNT(*) AS row_count FROM campaigns
+SELECT 'campaigns' AS table_name, COUNT(*) AS row_number FROM campaigns
 UNION ALL SELECT 'categories', COUNT(*) FROM categories
 UNION ALL SELECT 'customers', COUNT(*) FROM customers
 UNION ALL SELECT 'orders', COUNT(*) FROM orders
@@ -57,81 +57,62 @@ UNION ALL SELECT 'refunds', COUNT(*) FROM refunds
 UNION ALL SELECT 'reviews', COUNT(*) FROM reviews
 UNION ALL SELECT 'sellers', COUNT(*) FROM sellers
 UNION ALL SELECT 'shipments', COUNT(*) FROM shipments
-UNION ALL SELECT 'vouchers', COUNT(*) FROM vouchers
-ORDER BY table_name;
+UNION ALL SELECT 'vouchers', COUNT(*) FROM vouchers;
 ```
-
-The `orders` table is included because it is the main transaction table. Removing it from profiling would make the dataset overview incomplete.
 
 **Result preview**
 
-| table_name     | row_count   |
-|:---------------|:------------|
-| campaigns      | 14          |
-| categories     | 32          |
-| customers      | 60,000      |
-| order_items    | 424,097     |
-| orders         | 250,000     |
-| payments       | 250,000     |
-| product_events | 1,000,000   |
-| products       | 40,000      |
-| refunds        | 16,517      |
-| reviews        | 135,892     |
-| sellers        | 4,000       |
-| shipments      | 225,600     |
-| vouchers       | 70          |
+| table_name     | row_number   |
+|:---------------|:-------------|
+| campaigns      | 14           |
+| categories     | 32           |
+| customers      | 60,000       |
+| orders         | 250,000      |
+| order_items    | 424,097      |
+| payments       | 250,000      |
+| product_events | 1,000,000    |
+| products       | 40,000       |
+| refunds        | 16,517       |
+| reviews        | 135,892      |
+| sellers        | 4,000        |
+| shipments      | 225,600      |
+| vouchers       | 70           |
 
 **Brief insight**
 
-The dataset contains more than 2.4 million rows across 13 tables. `product_events` is the largest table with 1,000,000 rows, while `orders` and `payments` each contain 250,000 rows. This gives enough scale to practice joins, aggregation, and performance-aware SQL without using real company data.
+The dataset contains more than 2.4 million rows across 13 tables. `product_events` is the largest table with 1,000,000 rows, while `orders` and `payments` each contain 250,000 rows. Event-level and transaction-level analyses will therefore be the heaviest parts of the database.
 
 ### 2. Show Order Volume by Order Status and Month
 
-This analysis shows how orders are distributed across statuses over time. It helps detect whether the marketplace is mostly generating completed transactions or whether operational issues appear through cancelled, pending, returned, or shipped-but-not-completed orders.
+This query shows order volume by monthly period and `order_status`. It helps identify whether most orders are completed or whether operational issues appear through cancelled, pending, returned, or shipped statuses.
 
 ```sql
 SELECT
-    DATE_TRUNC('month', order_datetime)::date AS order_month,
+    DATE_TRUNC('month', order_datetime) AS order_month,
     order_status,
-    COUNT(*) AS order_count
+    COUNT(order_id) AS order_count
 FROM orders
-GROUP BY 1, 2
-ORDER BY 1, 2;
+GROUP BY 2, 1
+ORDER BY 2, 1 ASC;
 ```
 
 This query intentionally does not filter only completed orders because the purpose is to understand the full operational status distribution.
 
-**Result preview**
 
-**Status distribution summary**
+**Result Preview: Overall Status Distribution**
 
-| order_status   | orders   |   share_pct |
-|:---------------|:---------|------------:|
-| completed      | 205,170  |       82.07 |
-| cancelled      | 20,380   |        8.15 |
-| shipped        | 12,877   |        5.15 |
-| returned       | 7,553    |        3.02 |
-| pending        | 4,020    |        1.61 |
+| order_status   | order_count   |   share_pct |
+|:---------------|:--------------|------------:|
+| completed      | 205,170       |       82.07 |
+| cancelled      | 20,380        |        8.15 |
+| shipped        | 12,877        |        5.15 |
+| returned       | 7,553         |        3.02 |
+| pending        | 4,020         |        1.61 |
 
-**Latest monthly status preview**
+**Result preview: latest monthly rows**
 
 | order_month   | order_status   | order_count   |
 |:--------------|:---------------|:--------------|
-| 2026-01-01    | cancelled      | 630           |
-| 2026-01-01    | completed      | 6,068         |
-| 2026-01-01    | pending        | 121           |
-| 2026-01-01    | returned       | 240           |
-| 2026-01-01    | shipped        | 374           |
-| 2026-02-01    | cancelled      | 909           |
-| 2026-02-01    | completed      | 9,068         |
-| 2026-02-01    | pending        | 196           |
-| 2026-02-01    | returned       | 349           |
-| 2026-02-01    | shipped        | 585           |
-| 2026-03-01    | cancelled      | 1,249         |
-| 2026-03-01    | completed      | 12,436        |
-| 2026-03-01    | pending        | 214           |
-| 2026-03-01    | returned       | 398           |
-| 2026-03-01    | shipped        | 799           |
 | 2026-04-01    | cancelled      | 573           |
 | 2026-04-01    | completed      | 6,227         |
 | 2026-04-01    | pending        | 116           |
@@ -145,50 +126,35 @@ This query intentionally does not filter only completed orders because the purpo
 
 **Brief insight**
 
-Completed orders dominate the platform at 82.07% of total orders, while cancelled orders account for 8.15%. This suggests the marketplace is mostly converting orders successfully, but cancellation remains large enough to deserve further investigation by payment method, source platform, seller, or category.
+Completed orders dominate the marketplace at 82.07% of total order, but cancellation remains a meaningful share of total orders, account for 8.15%. This makes cancellation a valid follow-up area for payment, platform, seller, or fulfillment analysis.
 
 ### 3. Calculate Monthly GMV, Net Paid Amount, Product Discount, Voucher Discount, and Shipping Fee
 
-This analysis summarizes monthly commercial performance by separating GMV, product discount, voucher discount, shipping fee, and net paid amount. It matters because GMV and buyer payment are different business concepts, and mixing them can lead to wrong conclusions about revenue, discount burn, and marketplace value.
+This query summarizes completed-order commercial performance by month. It separates GMV, shipping fee, product discount, voucher discount, and net paid amount so that sales value and buyer-paid value are not confused.
 
 ```sql
-SELECT
-    DATE_TRUNC('month', order_datetime)::date AS order_month,
+SELECT 
+    DATE_TRUNC('month', order_datetime) AS order_month,
     SUM(gross_amount) AS gmv,
+    SUM(shipping_fee) AS shipping_fee_total,
     SUM(product_discount_amount) AS product_discount_total,
     SUM(voucher_discount_amount) AS voucher_discount_total,
-    SUM(shipping_fee) AS shipping_fee_total,
-    SUM(net_paid_amount) AS net_paid_total,
-    SUM(
-        gross_amount
-        - product_discount_amount
-        - voucher_discount_amount
-        + shipping_fee
-    ) AS recalculated_net_paid,
-    SUM(net_paid_amount)
-    - SUM(
-        gross_amount
-        - product_discount_amount
-        - voucher_discount_amount
-        + shipping_fee
-    ) AS net_paid_difference
+    SUM(net_paid_amount) AS net_paid_total
 FROM orders
 WHERE order_status = 'completed'
 GROUP BY 1
 ORDER BY 1;
 ```
 
-Net paid amount is validated using `gross_amount - product_discount_amount - voucher_discount_amount + shipping_fee`. Shipping fee is added because it is part of the buyer's final payment.
+**Result Preview**
 
-**Result preview**
-
-| order_month   | gmv            | product_discount_total   | voucher_discount_total   | shipping_fee_total   | net_paid_total   | recalculated_net_paid   |   net_paid_difference |
-|:--------------|:---------------|:-------------------------|:-------------------------|:---------------------|:-----------------|:------------------------|----------------------:|
-| 2026-01-01    | 12,599,214,000 | 308,709,880              | 0                        | 76,897,000           | 12,367,401,120   | 12,367,401,120          |                     0 |
-| 2026-02-01    | 19,126,648,000 | 1,171,532,640            | 114,738,809              | 115,250,000          | 17,955,626,551   | 17,955,626,551          |                     0 |
-| 2026-03-01    | 25,917,835,000 | 1,601,350,860            | 165,512,656              | 158,482,000          | 24,309,453,484   | 24,309,453,484          |                     0 |
-| 2026-04-01    | 13,382,138,000 | 319,876,810              | 0                        | 79,256,000           | 13,141,517,190   | 13,141,517,190          |                     0 |
-| 2026-05-01    | 16,588,962,000 | 831,688,310              | 94,612,828               | 99,040,000           | 15,761,700,862   | 15,761,700,862          |                     0 |
+| order_month   | gmv            | shipping_fee_total   | product_discount_total   | voucher_discount_total   | net_paid_total   |
+|:--------------|:---------------|:---------------------|:-------------------------|:-------------------------|:-----------------|
+| 2026-01-01    | 12,599,214,000 | 76,897,000           | 308,709,880              | 0                        | 12,367,401,120   |
+| 2026-02-01    | 19,126,648,000 | 115,250,000          | 1,171,532,640            | 114,738,809              | 17,955,626,551   |
+| 2026-03-01    | 25,917,835,000 | 158,482,000          | 1,601,350,860            | 165,512,656              | 24,309,453,484   |
+| 2026-04-01    | 13,382,138,000 | 79,256,000           | 319,876,810              | 0                        | 13,141,517,190   |
+| 2026-05-01    | 16,588,962,000 | 99,040,000           | 831,688,310              | 94,612,828               | 15,761,700,862   |
 
 **Brief insight**
 
@@ -196,7 +162,7 @@ Across completed orders, total GMV reaches 430,792,971,000, while total net paid
 
 ### 4. Find Top 20 Categories by Completed GMV and Units Sold
 
-This analysis identifies the categories generating the highest completed GMV and product units sold. It supports category prioritization, campaign planning, seller acquisition focus, and merchandising decisions.
+This query ranks categories by completed GMV and units sold. It supports category prioritization, campaign planning, seller acquisition, and merchandising decisions.
 
 ```sql
 SELECT
@@ -204,7 +170,6 @@ SELECT
     c.parent_category,
     c.category_name,
     SUM(oi.quantity) AS units_sold,
-    COUNT(DISTINCT o.order_id) AS completed_orders,
     SUM(oi.item_gross_amount) AS gmv
 FROM order_items oi
 JOIN categories c
@@ -213,21 +178,19 @@ JOIN orders o
     ON oi.order_id = o.order_id
 WHERE o.order_status = 'completed'
 GROUP BY 1, 2, 3
-ORDER BY gmv DESC, units_sold DESC
+ORDER BY 5 DESC, 4 DESC
 LIMIT 20;
 ```
 
-Units sold must use `SUM(oi.quantity)`, not `COUNT(oi.quantity)`. Counting quantity only counts item rows, while summing quantity counts actual units sold.
-
 **Result preview**
 
-| category_id   | parent_category   | category_name       | units_sold   | completed_orders   | gmv             |
-|:--------------|:------------------|:--------------------|:-------------|:-------------------|:----------------|
-| CAT004        | Electronics       | Computers & Laptops | 13,823       | 9,332              | 172,408,752,000 |
-| CAT001        | Electronics       | Smartphones         | 12,912       | 8,648              | 70,690,224,000  |
-| CAT015        | Home & Living     | Furniture           | 13,619       | 9,165              | 30,257,522,000  |
-| CAT003        | Electronics       | Home Appliances     | 13,500       | 9,131              | 19,973,004,000  |
-| CAT012        | Beauty            | Fragrance           | 22,768       | 15,250             | 12,469,337,000  |
+| category_id   | parent_category   | category_name       | units_sold   | gmv             |
+|:--------------|:------------------|:--------------------|:-------------|:----------------|
+| CAT004        | Electronics       | Computers & Laptops | 13,823       | 172,408,752,000 |
+| CAT001        | Electronics       | Smartphones         | 12,912       | 70,690,224,000  |
+| CAT015        | Home & Living     | Furniture           | 13,619       | 30,257,522,000  |
+| CAT003        | Electronics       | Home Appliances     | 13,500       | 19,973,004,000  |
+| CAT012        | Beauty            | Fragrance           | 22,768       | 12,469,337,000  |
 
 **Brief insight**
 
@@ -235,15 +198,13 @@ Computers & Laptops is the strongest category by GMV, followed by Smartphones. S
 
 ### 5. Find Top 20 Sellers by Completed GMV and Marketplace Commission
 
-This analysis identifies sellers that contribute the most completed GMV and marketplace commission. It is useful for seller management because high-value sellers may require retention support, account management, operational monitoring, or partnership treatment.
+This query ranks sellers by completed GMV and marketplace commission. It helps identify high-value sellers that may deserve retention support, account management, or operational monitoring.
 
 ```sql
 SELECT
     s.seller_id,
     s.shop_name,
     s.seller_tier,
-    COUNT(DISTINCT o.order_id) AS completed_orders,
-    SUM(oi.quantity) AS units_sold,
     SUM(oi.item_gross_amount) AS gmv,
     SUM(oi.platform_commission_amount) AS marketplace_commission
 FROM order_items oi
@@ -253,21 +214,19 @@ JOIN orders o
     ON oi.order_id = o.order_id
 WHERE o.order_status = 'completed'
 GROUP BY 1, 2, 3
-ORDER BY gmv DESC, marketplace_commission DESC
+ORDER BY 4 DESC, 5 DESC
 LIMIT 20;
 ```
 
-GMV is calculated from item-level data using `SUM(oi.item_gross_amount)` to avoid duplicating order-level values when working at seller level.
-
 **Result preview**
 
-| seller_id   | shop_name          | seller_tier   |   completed_orders |   units_sold | gmv           | marketplace_commission   |
-|:------------|:-------------------|:--------------|-------------------:|-------------:|:--------------|:-------------------------|
-| S00721      | Sinar House 721    | Silver        |                 57 |          152 | 1,551,820,000 | 87,218,641               |
-| S01581      | Murah Tech 1581    | Silver        |                 52 |          129 | 1,074,377,000 | 47,249,443               |
-| S00852      | Global Gallery 852 | Silver        |                 79 |          214 | 1,023,008,000 | 57,155,455               |
-| S00900      | Prima Gallery 900  | Silver        |                 61 |          162 | 974,264,000   | 53,300,364               |
-| S02936      | Global House 2936  | Bronze        |                 68 |          190 | 966,312,000   | 46,579,689               |
+| seller_id   | shop_name          | seller_tier   | gmv           | marketplace_commission   |
+|:------------|:-------------------|:--------------|:--------------|:-------------------------|
+| S00721      | Sinar House 721    | Silver        | 1,551,820,000 | 87,218,641               |
+| S01581      | Murah Tech 1581    | Silver        | 1,074,377,000 | 47,249,443               |
+| S00852      | Global Gallery 852 | Silver        | 1,023,008,000 | 57,155,455               |
+| S00900      | Prima Gallery 900  | Silver        | 974,264,000   | 53,300,364               |
+| S02936      | Global House 2936  | Bronze        | 966,312,000   | 46,579,689               |
 
 **Brief insight**
 
@@ -275,14 +234,13 @@ The top sellers are concentrated mostly in Silver and Bronze tiers. The highest-
 
 ### 6. Find Top 20 Products by Units Sold
 
-This analysis finds the strongest products by actual units sold. It helps identify high-demand products for inventory planning, campaign promotion, seller support, and product recommendation strategy.
+This query ranks products by total units sold. It is useful for identifying high-demand products for inventory monitoring, campaign promotion, and recommendation support.
 
 ```sql
 SELECT
     p.product_id,
     p.product_name,
-    SUM(oi.quantity) AS units_sold,
-    COUNT(DISTINCT o.order_id) AS completed_orders,
+    SUM(oi.quantity) AS unit_sold,
     SUM(oi.item_gross_amount) AS gmv
 FROM order_items oi
 JOIN products p
@@ -291,21 +249,19 @@ JOIN orders o
     ON oi.order_id = o.order_id
 WHERE o.order_status = 'completed'
 GROUP BY 1, 2
-ORDER BY units_sold DESC, gmv DESC
+ORDER BY 3 DESC, 4 DESC
 LIMIT 20;
 ```
 
-The important correction is to use `SUM(oi.quantity)` for product sold quantity. A single order item row can represent more than one unit.
-
 **Result preview**
 
-| product_id   | product_name                      |   units_sold |   completed_orders | gmv       |
-|:-------------|:----------------------------------|-------------:|-------------------:|:----------|
-| P0020067     | Tupperware Kitchenware Item 20067 |          167 |                 49 | 5,845,000 |
-| P0007794     | Scarlett Skincare Item 7794       |           72 |                 42 | 3,600,000 |
-| P0012128     | Wings Fresh Food Item 12128       |           72 |                 37 | 936,000   |
-| P0036893     | Unilever Fresh Food Item 36893    |           70 |                 36 | 5,460,000 |
-| P0039271     | Berrybenka Bags Item 39271        |           69 |                 40 | 6,624,000 |
+| product_id   | product_name                      |   unit_sold | gmv       |
+|:-------------|:----------------------------------|------------:|:----------|
+| P0020067     | Tupperware Kitchenware Item 20067 |         167 | 5,845,000 |
+| P0007794     | Scarlett Skincare Item 7794       |          72 | 3,600,000 |
+| P0012128     | Wings Fresh Food Item 12128       |          72 | 936,000   |
+| P0036893     | Unilever Fresh Food Item 36893    |          70 | 5,460,000 |
+| P0039271     | Berrybenka Bags Item 39271        |          69 | 6,624,000 |
 
 **Brief insight**
 
@@ -313,36 +269,31 @@ The highest-unit product sold 167 units, but its GMV is much lower than some pro
 
 ### 7. Calculate AOV by Payment Method and Source Platform
 
-This analysis compares average order value across payment methods and source platforms. It helps reveal differences in customer behavior, transaction size, payment preference, and platform-level monetization quality.
+This query calculates AOV by `payment_method` and `source_platform`. It helps identify payment-platform combinations associated with higher-value completed orders.
 
 ```sql
-SELECT
+SELECT 
     payment_method,
     source_platform,
-    COUNT(*) AS completed_orders,
-    SUM(gross_amount) AS gmv,
-    ROUND(
-        SUM(gross_amount) / NULLIF(COUNT(*), 0),
-        2
-    ) AS aov
+    AVG(gross_amount) AS aov
 FROM orders
 WHERE order_status = 'completed'
 GROUP BY 1, 2
-ORDER BY source_platform, payment_method;
+ORDER BY 2, 1;
 ```
-
-`AVG(gross_amount)` would work at pure order grain, but `SUM(gross_amount) / COUNT(*)` makes the business definition clearer: AOV equals GMV divided by completed order count.
 
 **Result preview**
 
-| payment_method   | source_platform   | completed_orders   | gmv            | aov          |
-|:-----------------|:------------------|:-------------------|:---------------|:-------------|
-| Virtual Account  | ios               | 2,359              | 5,906,563,000  | 2,503,841.88 |
-| Bank Transfer    | android           | 24,138             | 53,045,607,000 | 2,197,597.44 |
-| PayLater         | ios               | 4,037              | 8,778,281,000  | 2,174,456.53 |
-| COD              | web               | 3,956              | 8,425,196,000  | 2,129,725.99 |
-| QRIS             | android           | 7,161              | 15,235,308,000 | 2,127,539.17 |
-| COD              | android           | 27,362             | 58,154,906,000 | 2,125,389.45 |
+| payment_method   | source_platform   | aov          |
+|:-----------------|:------------------|:-------------|
+| Bank Transfer    | android           | 2,197,597.44 |
+| COD              | android           | 2,125,389.45 |
+| Credit Card      | android           | 2,107,849.65 |
+| PayLater         | android           | 2,062,562.42 |
+| QRIS             | android           | 2,127,539.17 |
+| ShopeePay        | android           | 2,086,370.75 |
+| Virtual Account  | android           | 2,050,887.57 |
+| Bank Transfer    | ios               | 2,014,224.52 |
 
 **Brief insight**
 
@@ -350,39 +301,34 @@ The highest AOV appears in iOS Virtual Account transactions, but the order count
 
 ### 8. Calculate Cancellation Rate by Payment Method and Source Platform
 
-This analysis identifies payment methods and source platforms with higher cancellation risk. It helps narrow down where the business should investigate checkout friction, payment failure, UX issues, buyer behavior, or operational problems.
+This query calculates cancellation rate by `payment_method` and `source_platform`. It helps identify where checkout friction, payment failure, or user behavior issues may be concentrated.
 
 ```sql
-SELECT
+SELECT 
     payment_method,
     source_platform,
+    COUNT(*) FILTER (WHERE order_status = 'cancelled') AS cancel_orders,
     COUNT(*) AS total_orders,
-    COUNT(*) FILTER (
-        WHERE order_status = 'cancelled'
-    ) AS cancelled_orders,
     ROUND(
-        100.0
-        * COUNT(*) FILTER (WHERE order_status = 'cancelled')
-        / NULLIF(COUNT(*), 0),
+        100.0 * COUNT(*) FILTER (WHERE order_status = 'cancelled')
+        / COUNT(*),
         2
-    ) AS cancellation_rate_pct
+    ) AS cancel_rate
 FROM orders
 GROUP BY 1, 2
-ORDER BY cancellation_rate_pct DESC, total_orders DESC;
+ORDER BY 5 DESC, 2, 1;
 ```
-
-Cancellation should be analyzed as a rate, not only as raw cancelled order count. A segment with more orders may naturally have more cancellations, so percentage-based comparison is fairer.
 
 **Result preview**
 
-| payment_method   | source_platform   | total_orders   | cancelled_orders   |   cancellation_rate_pct |
-|:-----------------|:------------------|:---------------|:-------------------|------------------------:|
-| Virtual Account  | web               | 1,483          | 139                |                    9.37 |
-| COD              | android           | 33,171         | 2,993              |                    9.02 |
-| COD              | web               | 4,808          | 428                |                    8.9  |
-| QRIS             | ios               | 2,455          | 212                |                    8.64 |
-| COD              | ios               | 9,422          | 801                |                    8.5  |
-| QRIS             | android           | 8,749          | 722                |                    8.25 |
+| payment_method   | source_platform   | cancel_orders   | total_orders   |   cancel_rate |
+|:-----------------|:------------------|:----------------|:---------------|--------------:|
+| Virtual Account  | web               | 139             | 1,483          |          9.37 |
+| COD              | android           | 2,993           | 33,171         |          9.02 |
+| COD              | web               | 428             | 4,808          |          8.9  |
+| QRIS             | ios               | 212             | 2,455          |          8.64 |
+| COD              | ios               | 801             | 9,422          |          8.5  |
+| QRIS             | android           | 722             | 8,749          |          8.25 |
 
 **Brief insight**
 
@@ -390,11 +336,11 @@ The highest cancellation rate appears in web Virtual Account transactions at 9.3
 
 ### 9. Calculate Monthly Active Buyers and Monthly Active Sellers
 
-This analysis tracks active demand and active supply in the marketplace by month. Active buyers represent customer purchasing activity, while active sellers represent supply-side participation in successful transactions.
+This query calculates monthly active buyers and active sellers using completed orders. It gives a basic view of demand-side and supply-side marketplace activity over time.
 
 ```sql
 SELECT
-    DATE_TRUNC('month', order_datetime)::date AS order_month,
+    DATE_TRUNC('month', order_datetime) AS order_month,
     COUNT(DISTINCT customer_id) AS active_buyers,
     COUNT(DISTINCT seller_id) AS active_sellers
 FROM orders
@@ -402,8 +348,6 @@ WHERE order_status = 'completed'
 GROUP BY 1
 ORDER BY 1;
 ```
-
-This query defines activity based on completed orders. A buyer or seller is only counted as active if they participated in at least one successful transaction in the month.
 
 **Result preview**
 
@@ -422,25 +366,20 @@ Monthly active buyers and sellers both peak in March 2026 in the preview period.
 
 ### 10. Compare Official Store vs Non-Official Store Performance
 
-This analysis compares official and non-official stores across active sellers, completed orders, units sold, GMV, marketplace commission, and AOV. It helps evaluate whether official-store status is associated with stronger commercial performance or seller productivity.
+This query compares official and not-official stores by active stores, completed orders, goods sold, GMV, and marketplace commission. It helps evaluate whether official-store status is associated with stronger commercial performance.
 
 ```sql
 SELECT
-    DATE_TRUNC('month', o.order_datetime)::date AS order_month,
-    CASE
+    DATE_TRUNC('month', o.order_datetime) AS order_month,
+    CASE 
         WHEN s.is_official_store = TRUE THEN 'official'
-        ELSE 'non_official'
-    END AS store_type,
-    COUNT(DISTINCT oi.seller_id) AS active_sellers,
-    COUNT(DISTINCT o.order_id) AS completed_orders,
-    SUM(oi.quantity) AS units_sold,
+        ELSE 'not official'
+    END AS official_store,
+    COUNT(DISTINCT oi.seller_id) AS store_active,
+    COUNT(DISTINCT o.order_id) AS order_complete,
+    SUM(oi.quantity) AS goods_sold,
     SUM(oi.item_gross_amount) AS gmv,
-    SUM(oi.platform_commission_amount) AS marketplace_commission,
-    ROUND(
-        SUM(oi.item_gross_amount)
-        / NULLIF(COUNT(DISTINCT o.order_id), 0),
-        2
-    ) AS aov
+    SUM(oi.platform_commission_amount) AS marketplace_commission
 FROM order_items oi
 JOIN sellers s
     ON oi.seller_id = s.seller_id
@@ -451,27 +390,23 @@ GROUP BY 1, 2
 ORDER BY 1, 2;
 ```
 
-Because this query joins `orders` and `order_items`, order count must use `COUNT(DISTINCT o.order_id)` to avoid duplicate orders. Units sold should use `SUM(oi.quantity)` because item rows do not always equal product units.
+**Result preview: latest monthly rows**
 
-**Result preview**
+| order_month   | official_store   | store_active   | order_complete   | goods_sold   | gmv            | marketplace_commission   |
+|:--------------|:-----------------|:---------------|:-----------------|:-------------|:---------------|:-------------------------|
+| 2026-03-01    | not official     | 3,319          | 10,812           | 26,712       | 22,848,588,000 | 1,055,498,611            |
+| 2026-03-01    | official         | 500            | 1,624            | 3,953        | 3,069,247,000  | 192,557,135              |
+| 2026-04-01    | not official     | 2,751          | 5,376            | 13,350       | 11,916,460,000 | 573,541,891              |
+| 2026-04-01    | official         | 432            | 851              | 2,058        | 1,465,678,000  | 97,657,914               |
+| 2026-05-01    | not official     | 2,963          | 6,685            | 16,150       | 14,251,455,000 | 658,660,890              |
+| 2026-05-01    | official         | 459            | 1,030            | 2,432        | 2,337,507,000  | 145,452,165              |
 
-**Latest monthly preview**
+**Result preview: overall store-type comparison**
 
-| order_month   | store_type   | active_sellers   | completed_orders   | units_sold   | gmv            | marketplace_commission   | aov          |
-|:--------------|:-------------|:-----------------|:-------------------|:-------------|:---------------|:-------------------------|:-------------|
-| 2026-03-01    | non_official | 3,319            | 10,812             | 26,712       | 22,848,588,000 | 1,055,498,611            | 2,113,261.93 |
-| 2026-03-01    | official     | 500              | 1,624              | 3,953        | 3,069,247,000  | 192,557,135              | 1,889,930.42 |
-| 2026-04-01    | non_official | 2,751            | 5,376              | 13,350       | 11,916,460,000 | 573,541,891              | 2,216,603.42 |
-| 2026-04-01    | official     | 432              | 851                | 2,058        | 1,465,678,000  | 97,657,914               | 1,722,300.82 |
-| 2026-05-01    | non_official | 2,963            | 6,685              | 16,150       | 14,251,455,000 | 658,660,890              | 2,131,855.65 |
-| 2026-05-01    | official     | 459              | 1,030              | 2,432        | 2,337,507,000  | 145,452,165              | 2,269,424.27 |
-
-**Overall store-type comparison**
-
-| store_type   | active_sellers   | completed_orders   | units_sold   | gmv             | marketplace_commission   | aov          |
-|:-------------|:-----------------|:-------------------|:-------------|:----------------|:-------------------------|:-------------|
-| non_official | 3,468            | 177,877            | 437,943      | 378,112,383,000 | 17,707,903,156           | 2,125,695.75 |
-| official     | 532              | 27,293             | 66,705       | 52,680,588,000  | 3,444,363,216            | 1,930,186.79 |
+| official_store   | store_active   | order_complete   | goods_sold   | gmv             | marketplace_commission   |
+|:-----------------|:---------------|:-----------------|:-------------|:----------------|:-------------------------|
+| not official     | 3,468          | 177,877          | 437,943      | 378,112,383,000 | 17,707,903,156           |
+| official         | 532            | 27,293           | 66,705       | 52,680,588,000  | 3,444,363,216            |
 
 **Brief insight**
 
