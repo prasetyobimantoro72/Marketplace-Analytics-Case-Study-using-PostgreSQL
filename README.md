@@ -14,7 +14,7 @@ The dataset contains transaction, catalog, seller, customer, campaign, logistics
 
 The simplified relationship map below shows the main analytical joins used in this project.
 
-![Marketplace table relationship map](marketplace_table_relationship_map.png)
+![Marketplace table relationship map](marketplace_table_relationship_diagram.png)
 
 ## Key Metric Definitions
 
