@@ -476,33 +476,3 @@ Because this query joins `orders` and `order_items`, order count must use `COUNT
 **Brief insight**
 
 Non-official stores contribute most of the GMV and order volume because they have far more active sellers. However, official stores still represent a meaningful GMV contribution despite a smaller seller base. The overall AOV is higher for non-official stores in this dataset, so the data does not support a blanket assumption that official stores always drive higher order value.
-
-## Review Notes from Query Revision
-
-The submitted SQL logic was generally on the right track, but several corrections were needed before publishing. Debug statements were removed, the `orders` table was added to row-count profiling, `COUNT(quantity)` was replaced with `SUM(quantity)`, AOV was written explicitly as `GMV / order count`, and order counts after item-level joins were changed to `COUNT(DISTINCT order_id)` where needed.
-
-## Analytical Learnings
-
-This project highlights that SQL analysis is not only about writing syntactically correct queries. Good marketplace analytics requires choosing the right metric grain, separating GMV from net paid amount, avoiding duplicated order-level values after joins, using completed orders for clean commercial baselines, calculating units sold from quantity, and comparing operational issues with rates rather than raw counts.
-
-## Repository Structure
-
-```text
-marketplace-sql-analytics-case-study/
-│
-├── README.md
-├── assets/
-│   ├── marketplace_table_overview.png
-│   └── marketplace_table_relationship_map.png
-│
-├── sql/
-│   ├── 01_10_foundational_marketplace_analysis.sql
-│   └── individual_query_files.sql
-│
-└── outputs/
-    └── screenshots/
-```
-
-## Portfolio Positioning
-
-This project demonstrates my ability to use SQL not only for data extraction, but also for business analysis. The queries are designed to answer practical marketplace questions, define relevant KPIs, handle relational data correctly, and avoid common analytical mistakes such as double-counting, incorrect denominator selection, and confusion between order-level and item-level metrics.
