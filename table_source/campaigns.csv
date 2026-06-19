@@ -1,0 +1,15 @@
+campaign_id,campaign_name,start_date,end_date,campaign_type,discount_budget
+CMP001,Payday Sale Jan 2024,2024-01-25,2024-01-31,payday,300000000
+CMP002,Ramadan Mega Sale 2024,2024-03-01,2024-04-10,seasonal,850000000
+CMP003,Mid Year Sale 2024,2024-06-06,2024-06-16,mega_campaign,720000000
+CMP004,9.9 Super Shopping Day 2024,2024-09-01,2024-09-10,mega_campaign,1150000000
+CMP005,11.11 Big Sale 2024,2024-11-01,2024-11-12,mega_campaign,1450000000
+CMP006,12.12 Birthday Sale 2024,2024-12-01,2024-12-13,mega_campaign,1700000000
+CMP007,Payday Sale Jan 2025,2025-01-25,2025-01-31,payday,350000000
+CMP008,Ramadan Mega Sale 2025,2025-03-01,2025-04-10,seasonal,900000000
+CMP009,Mid Year Sale 2025,2025-06-06,2025-06-16,mega_campaign,750000000
+CMP010,9.9 Super Shopping Day 2025,2025-09-01,2025-09-10,mega_campaign,1200000000
+CMP011,11.11 Big Sale 2025,2025-11-01,2025-11-12,mega_campaign,1500000000
+CMP012,12.12 Birthday Sale 2025,2025-12-01,2025-12-13,mega_campaign,1800000000
+CMP013,Ramadan Mega Sale 2026,2026-02-15,2026-03-25,seasonal,950000000
+CMP014,Payday Sale May 2026,2026-05-25,2026-05-31,payday,420000000
