@@ -10,11 +10,11 @@ The analysis focuses on foundational marketplace metrics such as data scale, ord
 
 The dataset contains transaction, catalog, seller, customer, campaign, logistics, review, refund, and event data. The image below summarizes what is included in each table.
 
-![Marketplace table overview](assets/marketplace_table_content.png)
+![Marketplace table overview](marketplace_table_content.png)
 
 The simplified relationship map below shows the main analytical joins used in this project.
 
-![Marketplace table relationship map](assets/marketplace_table_relationship_diagram.png)
+![Marketplace table relationship map](marketplace_table_relationship_diagram.png)
 
 ## Key Metric Definitions
 
