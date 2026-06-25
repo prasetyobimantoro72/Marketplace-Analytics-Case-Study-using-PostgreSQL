@@ -454,8 +454,6 @@ ON dsp.order_date = ds.order_date
 ORDER BY 1;
 ```
 
-**How this query works**
-
 The query first creates `daily_sales_performance` to aggregate completed orders by day, including GMV, order count, buyer count, and AOV. Then `date_spine` generates every calendar date in the order period, and the final query left joins daily sales to that calendar spine before calculating rolling 7-day GMV with a window function.
 
 **Result preview**
@@ -515,7 +513,7 @@ FROM channel_summary
 ORDER BY 4 DESC, 3 DESC;
 ```
 
-**How this query works**
+****
 
 The query first counts completed orders per customer in `cust_completed_orders`. Then `channel_summary` joins those customers to the `customers` table to group them by acquisition channel and count customers with at least one completed order versus customers with at least two completed orders. The final query divides repeating customers by purchasing customers to calculate the repeat customer rate.
 
@@ -563,7 +561,7 @@ GROUP BY 1
 ORDER BY 1
 ```
 
-**How this query works**
+****
 
 The CTE marks each completed order with its order month and the customer’s first purchase month using a windowed `MIN(order_datetime)`. The final query then groups by month and counts distinct customers as new if the order month equals their first purchase month, or repeat if the order month is later.
 
@@ -645,7 +643,7 @@ CROSS JOIN overall_refund_rate orr
 ORDER BY 8 DESC, 6 DESC
 ```
 
-**How this query works**
+****
 
 The query starts from `paid_orders`, which builds an item-level base by joining `order_items`, `orders`, and `payments` while keeping only paid or refunded payments. `category_refund_rate` calculates the refund rate per category, `overall_refund_rate` calculates the marketplace-wide benchmark, and the final query uses `CROSS JOIN` to compare every category against that overall refund rate.
 
@@ -693,7 +691,7 @@ SELECT
 FROM shop_data
 ```
 
-**How this query works**
+****
 
 The `shop_data` CTE aggregates completed item GMV and average rating by seller by joining `order_items`, `orders`, `sellers`, and `reviews`. The final query applies `NTILE(10)` over GMV to assign each seller into a GMV decile, so high-GMV sellers can be inspected together with their rating performance.
 
@@ -768,7 +766,7 @@ ORDER BY
 	traffic DESC
 ```
 
-**How this query works**
+****
 
 The query first calculates seller traffic from product view events in `seller_traffic`, then calculates distinct completed orders per seller in `seller_completed_orders`. The final query joins both summaries back to `sellers`, calculates view-to-order conversion and views per order, then filters sellers with at least 100 views and conversion below 20%.
 
@@ -828,7 +826,7 @@ ORDER BY 4 DESC
 LIMIT 1;
 ```
 
-**How this query works**
+****
 
 The query first inspects the shipment table, then `late_shipment` flags each delivered shipment as late or not late based on the estimated delivery date. `late_delivery_count` summarizes delivered and late shipments by shipping service, and the final query calculates the late-delivery rate and returns the worst-performing service.
 
@@ -868,7 +866,7 @@ GROUP BY 1,2
 ORDER BY 1,2
 ```
 
-**How this query works**
+****
 
 The `target_time` CTE calculates estimated SLA days for every shipment by subtracting the shipped date from the estimated delivery date. The final query groups the result by shipping province and courier to calculate the average estimated SLA for each courier-province combination.
 
@@ -914,7 +912,7 @@ FROM
 ORDER BY 4 DESC
 ```
 
-**How this query works**
+****
 
 The inner subquery aggregates payments by payment method, counting successful paid payments and total processed payments. The outer query then divides successful payments by total payments to calculate the payment success rate for each payment method.
 
@@ -967,7 +965,7 @@ FROM payments_aggregate
 ORDER BY 4 DESC
 ```
 
-**How this query works**
+****
 
 The `payments_aggregate` CTE summarizes failed, pending, failed-or-pending, and total payments by payment method. The final query divides failed-or-pending payments by total processed payments to calculate the incomplete-payment rate by method.
 
